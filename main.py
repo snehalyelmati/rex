@@ -158,7 +158,8 @@ async def main():
     # server_path = "git_mcp_server.py"
     await client.connect_to_server(server_path)
 
-    query = "Get me the exact directory structure of the 'psf/requests' repo as a tree."
+    # query = "Get me the contents of pyproject.toml from the 'psf/requests' repo."
+    query = "Search for the dispatch_hook function from the 'psf/requests' repo."
 
     logging.info(f"Query: {query}")
 

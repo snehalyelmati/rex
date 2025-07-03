@@ -1,6 +1,9 @@
+import logging
 import os
+import re
 import subprocess
 from pathlib import Path
+from typing import List
 
 from mcp.server.fastmcp import FastMCP
 
@@ -88,6 +91,50 @@ def get_repo_structure(repo_name: str):
             result += f"{sub_indent}{file}\n"
 
     return result
+
+
+@mcp.tool()
+def code_search(repo_name: str, search_pattern: str) -> str:
+    """Find all occurances of a particular string pattern within the repo.
+
+    You can customize the pattern_to_search variable to match specific code patterns or functions. For example:
+    - To find function definitions: r"^\s*def\s+\w+\s*\("
+    - To find specific function calls: r"my_function\("
+
+    Args:
+        repo_name (str): Name of the repository.
+        search_pattern (str): Pattern to search for in the repository.
+
+    Returns: List of all occurences of the specified search pattern from the repository as a string.
+    """
+
+    # utility function to check and update repo in ./tmp directory
+    check_if_repo_exists(repo_name)
+
+    results = []
+    directory = "./tmp/" + repo_name
+
+    regex = re.compile(r"^\s*def\s+\w+\s*\(")
+
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".py"):
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        for line_no, line in enumerate(f, start=1):
+                            if regex.search(line):
+                                results.append(
+                                    {
+                                        "file_path": file_path,
+                                        "line_no": line_no,
+                                        "content": line.strip(),
+                                    }
+                                )
+                except Exception as e:
+                    print(f"Error reading {file_path}: {e}")
+
+    return str(results)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ Build an intelligent question-answering system that can understand and query Git
    - [x] **Repository Structure Server**: Get directory trees and file listings
    - [ ] **Commit History Server**: Access commit messages and changes
    - [ ] **Issue/PR Server**: Query issues and pull requests
-   - [ ] **Code Search Server**: Search for specific code patterns or functions
+   - [x] **Code Search Server**: Search for specific code patterns or functions
    - [ ] **Documentation Server**: Extract and process README files and docs
 
 2. **MCP Server Specifications**
