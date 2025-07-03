@@ -10,7 +10,7 @@ Build an intelligent question-answering system that can understand and query Git
 
 ### Part 2: MCP Server Development
 1. **Create MCP Servers** (Choose at least 3 of the following)
-   - [ ] **File Content Server**: Retrieve and read file contents
+   - [x] **File Content Server**: Retrieve and read file contents
    - [ ] **Repository Structure Server**: Get directory trees and file listings
    - [ ] **Commit History Server**: Access commit messages and changes
    - [ ] **Issue/PR Server**: Query issues and pull requests
