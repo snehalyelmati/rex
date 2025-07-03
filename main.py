@@ -1,5 +1,3 @@
-# MCP client with tool calling
-
 import asyncio
 import json
 from contextlib import AsyncExitStack
@@ -8,6 +6,14 @@ from typing import Any, Dict, List, Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from openai import AsyncOpenAI
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)-8s %(message)s",
+    datefmt="%m/%d/%y %H:%M:%S",
+)
 
 
 class MCPOpenAIClient:
@@ -53,9 +59,9 @@ class MCPOpenAIClient:
 
         # List available tools
         tools_result = await self.session.list_tools()
-        print("\nConnected to server with tools:")
+        logging.info("Connected to server with tools:")
         for tool in tools_result.tools:
-            print(f"- {tool.name}: {tool.description}")
+            logging.info(f"- {tool.name}: {tool.description}")
 
     async def get_mcp_tools(self) -> List[Dict[str, Any]]:
         """Get available tools from the MCP server in OpenAI format.
@@ -115,7 +121,6 @@ class MCPOpenAIClient:
                     tool_call.function.name,
                     arguments=json.loads(tool_call.function.arguments),
                 )
-                print(result)
 
                 # Add tool response to conversation
                 messages.append(
@@ -153,13 +158,12 @@ async def main():
     # server_path = "git_mcp_server.py"
     await client.connect_to_server(server_path)
 
-    # query = "What is 2 + 3?"
-    # query = "Search for 'README.md' in 'psf/requests' repo."
-    query = "Search and return all content from 'README.md' in 'psf/requests' repo."
-    print(f"\nQuery: {query}")
+    query = "Get me the exact directory structure of the 'psf/requests' repo as a tree."
+
+    logging.info(f"Query: {query}")
 
     response = await client.process_query(query)
-    print(f"\nResponse: {response}")
+    logging.info(f"Response: {response}")
 
     await client.cleanup()
 

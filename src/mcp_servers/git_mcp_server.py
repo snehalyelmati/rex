@@ -39,18 +39,12 @@ def search_and_read_file(folder_path: str, filename: str):
 
     Returns: Returns the contents of the file if found.
     """
-    for root, dirs, files in os.walk(folder_path):
+    for root, _, files in os.walk(folder_path):
         if filename in files:
             file_path = os.path.join(root, filename)
             with open(file_path, "r") as file:
                 return file.read()
     return None
-
-
-@mcp.tool()
-def add(a: int, b: int) -> int:
-    """Add two numbers `a` and `b` together."""
-    return a + b
 
 
 @mcp.tool()
@@ -68,6 +62,32 @@ def file_content_parser(repo_name: str, filename: str):
     check_if_repo_exists(repo_name)
 
     return search_and_read_file(folder_path="./tmp/" + repo_name, filename=filename)
+
+
+@mcp.tool()
+def get_repo_structure(repo_name: str):
+    """Get the directory structure of the specified repository.
+
+    Args:
+        repo_name (str): Name of the repository.
+
+    Returns: Directory structure of the repo.
+    """
+
+    # utility function to check and update repo in ./tmp directory
+    check_if_repo_exists(repo_name)
+
+    result = ""
+    directory = "./tmp/" + repo_name
+    for root, _, files in os.walk(directory):
+        level = root.replace(directory, "").count(os.sep)
+        indent = " " * 4 * level
+        result += f"{indent}{os.path.basename(root)}/\n"
+        sub_indent = " " * 4 * (level + 1)
+        for file in files:
+            result += f"{sub_indent}{file}\n"
+
+    return result
 
 
 if __name__ == "__main__":
