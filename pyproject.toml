@@ -5,6 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "langchain-mcp-adapters>=0.1.8",
+    "langchain-openai>=0.3.27",
+    "langgraph>=0.5.1",
     "mcp[cli]>=1.10.1",
     "openai>=1.93.0",
     "streamlit>=1.46.1",
