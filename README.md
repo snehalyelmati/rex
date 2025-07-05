@@ -25,8 +25,8 @@ Build an intelligent question-answering system that can understand and query Git
 
 ### Part 3: Streamlit Application
 1. **Build Q&A Interface**
-   - [ ] Clean, intuitive chat-like interface
-   - [ ] Display conversation history
+   - [x] Clean, intuitive chat-like interface
+   - [x] Display conversation history
    - [ ] Show which MCP tools were used for each response
    - [ ] Include repository information and stats
 
