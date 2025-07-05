@@ -7,4 +7,6 @@ requires-python = ">=3.13"
 dependencies = [
     "mcp[cli]>=1.10.1",
     "openai>=1.93.0",
+    "streamlit>=1.46.1",
+    "watchdog>=6.0.0",
 ]
