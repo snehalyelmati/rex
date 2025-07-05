@@ -7,6 +7,12 @@ from typing import List
 
 from mcp.server.fastmcp import FastMCP
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)-8s %(message)s",
+    datefmt="%m/%d/%y %H:%M:%S",
+)
+
 mcp = FastMCP(name="Git")
 
 
@@ -23,14 +29,14 @@ def check_if_repo_exists(repo_name: str):
     folder_path = Path(destination_path + repo_name)
 
     if folder_path.is_dir():
-        print(f"The repo '{folder_path}' already exists, skipping clone...")
+        logging.info(f"The repo '{repo_name}' already exists, skipping clone...")
     else:
-        print(f"Repo '{folder_path}' does not exist, cloning...")
+        logging.info(f"Repo '{repo_name}' does not exist, cloning...")
 
         repo_url = "https://github.com/" + repo_name
         subprocess.run(["git", "clone", repo_url, folder_path], check=True)
 
-        print(f"Successfully cloned repo: {repo_name}.")
+        logging.info(f"Successfully cloned repo: {repo_name}.")
 
 
 def search_and_read_file(folder_path: str, filename: str):
@@ -132,7 +138,7 @@ def code_search(repo_name: str, search_pattern: str) -> str:
                                     }
                                 )
                 except Exception as e:
-                    print(f"Error reading {file_path}: {e}")
+                    logging.error(f"Error reading {file_path}: {e}")
 
     return str(results)
 
@@ -142,13 +148,13 @@ if __name__ == "__main__":
     transport = "stdio"
 
     if transport == "stdio":
-        print("Running with stdio transport")
+        logging.info("Running with stdio transport")
         mcp.run(transport="stdio")
     elif transport == "sse":
-        print("Running with sse transport")
+        logging.info("Running with sse transport")
         mcp.run(transport="sse")
     elif transport == "streamable-http":
-        print("Running with streamable-http transport")
+        logging.info("Running with streamable-http transport")
         mcp.run(transport="streamable-http")
     else:
         raise ValueError(f"Invalid transport format: {transport}")
