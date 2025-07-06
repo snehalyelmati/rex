@@ -88,7 +88,13 @@ def get_repo_structure(repo_name: str):
 
     result = ""
     directory = "./tmp/" + repo_name
-    for root, _, files in os.walk(directory):
+
+    ignore_list = {".git"}
+
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in ignore_list]
+        files = [f for f in files if f not in ignore_list]
+
         level = root.replace(directory, "").count(os.sep)
         indent = " " * 4 * level
         result += f"{indent}{os.path.basename(root)}/\n"
