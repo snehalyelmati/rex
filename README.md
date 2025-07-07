@@ -18,21 +18,21 @@ Build an intelligent question-answering system that can understand and query Git
    - [ ] **Documentation Server**: Extract and process README files and docs
 
 2. **MCP Server Specifications**
-   - [ ] Each server must implement proper MCP protocol
+   - [x] Each server must implement proper MCP protocol
    - [ ] Include error handling and rate limiting
    - [ ] Support filtering and pagination where applicable
-   - [ ] Provide clear tool descriptions for the AI agent
+   - [x] Provide clear tool descriptions for the AI agent
 
 ### Part 3: Streamlit Application
 1. **Build Q&A Interface**
    - [x] Clean, intuitive chat-like interface
    - [x] Display conversation history
-   - [ ] Show which MCP tools were used for each response
+   - [x] Show which MCP tools were used for each response
    - [ ] Include repository information and stats
 
 2. **AI Agent Integration**
-   - [ ] Use an LLM (OpenAI, Anthropic, or open-source model)
-   - [ ] Implement tool-calling capabilities
+   - [x] Use an LLM (OpenAI, Anthropic, or open-source model)
+   - [x] Implement tool-calling capabilities
    - [ ] Design effective prompts for repository understanding
    - [ ] Handle multi-step reasoning and tool chaining
 
