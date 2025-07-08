@@ -8,7 +8,10 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from PIL.Image import Image
 
-from src.agent.planner_agent import AgentState, build_agent
+from src.agent.planner_agent import AgentState as PlannerState
+from src.agent.planner_agent import build_agent as build_planner_agent
+from src.agent.react_agent import AgentState as ReactAgentState
+from src.agent.react_agent import build_agent as build_react_agent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,7 +43,27 @@ def display_chat_history():
 
 
 async def main():
-    st.header("Repo Explorer - MCP + Agents")
+    agent_type = None
+    with st.sidebar:
+        st.header("REPO EXPLORER")
+        # st.image(agent.get_graph().draw_mermaid_png())
+        st.write(
+            "Intelligent question-answering system that can understand and query GitHub repositories using Model Context Protocol (MCP) servers and a Streamlit interface."
+        )
+        st.write(
+            """
+            1. __ReAct Agent__ is useful for simpler tasks, more stable.
+            2. __Planner Agent__ is suitable for more complex tasks.""",
+        )
+
+        agent_type = st.selectbox(
+            "Which agent would you like to use?",
+            ("ReAct Agent", "Planner Agent"),
+        )
+
+        st.caption(
+            "INFO: If the agent type is changed please refresh the page as some internal variables may persist due to streamlit's defaults."
+        )
 
     # Initialize session state
     async with stdio_client(server_params) as (read, write):
@@ -60,9 +83,14 @@ async def main():
             tools_by_name = {tool.name: tool for tool in tools_available}
             # st.write("Available tools:", [tool for tool in tools][0])
 
-            agent = await build_agent(tools_available)
-            with st.sidebar:
-                st.image(agent.get_graph().draw_mermaid_png())
+            agent = None
+            AgentState = None
+            if agent_type == "ReAct Agent":
+                agent = await build_react_agent(tools_available)
+                AgentState = ReactAgentState
+            elif agent_type == "Planner Agent":
+                agent = await build_planner_agent(tools_available)
+                AgentState = PlannerState
 
             # Implementing Agentic workflow
             if prompt := st.chat_input("How can I help?"):
@@ -70,17 +98,22 @@ async def main():
                 st.session_state.messages.append(HumanMessage(content=prompt))
 
                 with st.spinner("Thinking..."):
-                    # state = AgentState(
-                    #     messages=st.session_state.messages, tools=tools_by_name
-                    # )
-                    # st.session_state.messages = (await agent.ainvoke(state))["messages"]
-                    response = await agent.ainvoke(
-                        AgentState(input=prompt, messages=st.session_state.messages)
-                    )
-                    st.write(response)
-                    st.session_state.messages.append(
-                        AIMessage(response["past_steps"][-1][-1])
-                    )
+                    if agent_type == "ReAct Agent":
+                        state = AgentState(
+                            messages=st.session_state.messages, tools=tools_by_name
+                        )
+                        st.session_state.messages = (await agent.ainvoke(state))[
+                            "messages"
+                        ]
+                        st.write(state)
+                    elif agent_type == "Planner Agent":
+                        response = await agent.ainvoke(
+                            AgentState(input=prompt, messages=st.session_state.messages)
+                        )
+                        st.write(response)
+                        st.session_state.messages.append(
+                            AIMessage(response["past_steps"][-1][-1])
+                        )
 
                 # Display tool message along with AIMessage
                 if len(st.session_state.messages) > 2:
