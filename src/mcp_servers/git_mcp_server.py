@@ -39,12 +39,15 @@ def check_if_repo_exists(repo_name: str):
         logging.info(f"Successfully cloned repo: {repo_name}.")
 
 
+# FIXME: To handle files with same name and files with absolute or relative paths.
 def search_and_read_file(folder_path: str, filename: str):
     """Search for a file in the folder_path and return it's contents if it exists.
 
+    If the `filename` contains parent directory along with the filename, only pass the filename as the parameter.
+
     Args:
         folder_path (str): Folder path to search the file in.
-        filename (str): File to search for.
+        filename (str): Only the file name without it's parent directory. E.g. `README.md` or `main.py`.
 
     Returns: Returns the contents of the file if found.
     """
@@ -53,16 +56,16 @@ def search_and_read_file(folder_path: str, filename: str):
             file_path = os.path.join(root, filename)
             with open(file_path, "r") as file:
                 return file.read()
-    return None
+    return f"File: {filename}, not found in the repo..."
 
 
 @mcp.tool()
 def file_content_parser(repo_name: str, filename: str):
-    """Retrieve and read file contents for the specified file.
+    """Retrieve and fetch contents of the specifiled file.
 
     Args:
         repo_name (str): Name of the repository to search the file in.
-        filename (str): Name of the file to be read.
+        filename (str): Name of the file to be fetched.
 
     Returns: File contents of the specified file if found.
     """
@@ -126,7 +129,8 @@ def code_search(repo_name: str, search_pattern: str) -> str:
     results = []
     directory = "./tmp/" + repo_name
 
-    regex = re.compile(r"^\s*def\s+\w+\s*\(")
+    regex = re.compile(search_pattern)
+    # regex = re.compile(r"^\s*def\s+\w+\s*\(")
 
     for root, _, files in os.walk(directory):
         for file in files:
