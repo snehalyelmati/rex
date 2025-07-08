@@ -1,10 +1,11 @@
 import operator
-from typing import Annotated, Dict, List, Tuple, Union
+from typing import Annotated, Dict, List, Sequence, Tuple, Union
 
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
-from langgraph.graph import END, START, StateGraph
+from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -15,6 +16,7 @@ class AgentState(TypedDict):
     plan: List[str]
     past_steps: Annotated[List[Tuple], operator.add]
     response: str
+    messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
 class Plan(BaseModel):
@@ -69,6 +71,9 @@ Your original plan was this:
 You have currently done the follow steps:
 {past_steps}
 
+Past conversation history:
+{messages}
+
 Update your plan accordingly. If no more steps are needed and you can return to the user, then respond with that. Otherwise, fill out the plan. Only add steps to the plan that still NEED to be done. Do not return previously done steps as part of the plan."""
 )
 
@@ -77,6 +82,15 @@ replanner = replanner_prompt | ChatOpenAI(
     model="gpt-4.1-2025-04-14",
     temperature=0,
 ).with_structured_output(Act)
+
+
+async def plan_step(state: AgentState):
+    plan = await planner.ainvoke(
+        {"messages": state["messages"] + [("user", state["input"])]}
+    )
+    return {
+        "plan": plan.steps,
+    }
 
 
 async def execute_step(state: AgentState):
@@ -88,20 +102,21 @@ async def execute_step(state: AgentState):
     agent_response = await agent_executor.ainvoke(
         {"messages": [("user", task_formatted)]}
     )
+
     return {
         "past_steps": [(task, agent_response["messages"][-1].content)],
+        # "messages": agent_response,
     }
-
-
-async def plan_step(state: AgentState):
-    plan = await planner.ainvoke({"messages": [("user", state["input"])]})
-    return {"plan": plan.steps}
 
 
 async def replan_step(state: AgentState):
     output = await replanner.ainvoke(state)
+
     if isinstance(output.action, Response):
-        return {"response": output.action.response}
+        return {
+            "response": output.action.response,
+            "messages": AIMessage(output.action.response),
+        }
     else:
         return {"plan": output.action.steps}
 
