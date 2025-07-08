@@ -3,8 +3,8 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import List
 
+from git import Repo
 from mcp.server.fastmcp import FastMCP
 
 logging.basicConfig(
@@ -192,6 +192,45 @@ def code_search(repo_name: str, search_pattern: str) -> str:
                     logging.error(f"Error reading {file_path}: {e}")
 
     return str(results)
+
+
+@mcp.tool()
+def get_recent_commits_with_diffs(repo_name: str, num_commits: int = 5):
+    """
+    Retrieves recent commit messages along with their diffs from a local Git repository.
+
+    Args:
+        repo_name (str): Name of the git repo.
+        num_commits (int, optional): Number of recent commits to retrieve. Defaults to 5.
+
+    Returns (str): A string containing commit messages and diffs, or None if the repository is invalid.
+    """
+
+    # utility function to check and update repo in ./tmp directory
+    check_if_repo_exists(repo_name)
+
+    directory = "./tmp/" + repo_name
+
+    try:
+        repo = Repo(directory)
+        commits = list(repo.iter_commits("HEAD", max_count=num_commits))
+
+        commit_details = []
+        for commit in commits:
+            message = f"Commit: {commit.hexsha}\nAuthor: {commit.author.name} <{commit.author.email}>\nDate: {commit.committed_datetime}\n\nMessage: {commit.message.strip()}\n"
+            diffs = commit.diff(
+                commit.parents[0] if commit.parents else None, create_patch=True
+            )
+            diff_text = "\n".join(
+                d.diff.decode("utf-8", errors="ignore") for d in diffs
+            )
+            commit_details.append(f"{message}\nDiff:\n{diff_text}\n{'-'*80}")
+
+        return "\n\n".join(commit_details)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Could not fetch commits"
 
 
 if __name__ == "__main__":

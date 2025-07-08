@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "gitpython>=3.1.44",
     "langchain-mcp-adapters>=0.1.8",
     "langchain-openai>=0.3.27",
     "langgraph>=0.5.1",
