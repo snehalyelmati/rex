@@ -39,6 +39,47 @@ def check_if_repo_exists(repo_name: str):
         logging.info(f"Successfully cloned repo: {repo_name}.")
 
 
+@mcp.tool()
+def get_all_repo_contents(repo_name: str, file_extensions=None):
+    """
+    Recursively reads all files in the given repo directory and returns their combined contents as a string.
+
+    Args:
+        repo_path (str): Path to the cloned repository.
+        file_extensions (set): Set of file extensions to include (e.g., {'.py', '.md', '.txt'})
+
+    Returns:
+        str: Combined contents of all files as a single string.
+    """
+
+    # utility function to check and update repo in ./tmp directory
+    check_if_repo_exists(repo_name)
+
+    result = ""
+    directory = "./tmp/" + repo_name
+
+    all_contents = []
+    ignore_list = {".git"}
+
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in ignore_list]
+        files = [f for f in files if f not in ignore_list]
+
+        for file in files:
+            if file_extensions is None or os.path.splitext(file)[1] in file_extensions:
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                        all_contents.append(
+                            f"\n# File: {os.path.relpath(file_path, directory)}\n{content}"
+                        )
+                except Exception as e:
+                    print(f"Skipping {file_path}: {e}")
+
+    return "\n".join(all_contents)
+
+
 # FIXME: To handle files with same name and files with absolute or relative paths.
 def search_and_read_file(folder_path: str, filename: str):
     """Search for a file in the folder_path and return it's contents if it exists.
@@ -106,48 +147,6 @@ def get_repo_structure(repo_name: str):
             result += f"{sub_indent}{file}\n"
 
     return result
-
-
-@mcp.tool()
-def get_all_repo_contents(repo_name: str, file_extensions=None):
-    """
-    Recursively reads all files in the given repo directory and returns their combined contents as a string.
-    Useful for tasks which involve understanding of the whole repository.
-
-    Args:
-        repo_path (str): Path to the cloned repository.
-        file_extensions (set): Optional set of file extensions to include (e.g., {'.py', '.md', '.txt'})
-
-    Returns:
-        str: Combined contents of all files as a single string.
-    """
-
-    # utility function to check and update repo in ./tmp directory
-    check_if_repo_exists(repo_name)
-
-    result = ""
-    directory = "./tmp/" + repo_name
-
-    all_contents = []
-    ignore_list = {".git"}
-
-    for root, dirs, files in os.walk(directory):
-        dirs[:] = [d for d in dirs if d not in ignore_list]
-        files = [f for f in files if f not in ignore_list]
-
-        for file in files:
-            if file_extensions is None or os.path.splitext(file)[1] in file_extensions:
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
-                        all_contents.append(
-                            f"\n# File: {os.path.relpath(file_path, directory)}\n{content}"
-                        )
-                except Exception as e:
-                    print(f"Skipping {file_path}: {e}")
-
-    return "\n".join(all_contents)
 
 
 @mcp.tool()
