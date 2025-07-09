@@ -1,26 +1,45 @@
-# Repo Explorer - GitHub MCP Server with Q&A Agent
-Build an intelligent question-answering system that can understand and query GitHub repositories using Model Context Protocol (MCP) servers and a Streamlit interface.
+# Agentic Repo Explorer
 
-## Requirements
+Intelligent question-answering system that can understand and query GitHub repositories using Model Context Protocol (MCP) servers and a Streamlit interface with ReAct and Planner agent implemented with Langgraph.
+
+## Installation instructions
+To run the app locally, first install `uv` from the [Official Website](https://docs.astral.sh/uv/getting-started/installation/)
+
+### To install and run the virtual environment
+```
+$ uv venv
+
+$ source .venv/bin/activate
+```
+
+### To install all the dependencies from pyproject.toml
+```
+$ uv pip install 
+```
+
+### To run the Streamlit app
+```
+$ streamlit run main.py
+```
+
+## Progress:
 
 ### Part 1: GitHub Repository Selection & Analysis
-   - Select any public GitHub repository (preferably medium-sized, 100+ files)
-   - Examples: Popular open-source projects, documentation repos, or educational codebases
-   - Document your choice and reasoning
+   - I've selected `psf/requests` repo since it is one of the most used packages and relatively large.
 
 ### Part 2: MCP Server Development
 1. **Create MCP Servers** (Choose at least 3 of the following)
    - [x] **File Content Server**: Retrieve and read file contents
    - [x] **Repository Structure Server**: Get directory trees and file listings
-   - [ ] **Commit History Server**: Access commit messages and changes
-   - [ ] **Issue/PR Server**: Query issues and pull requests
+   - [x] **Commit History Server**: Access commit messages and changes
+   - [x] **Issue/PR Server**: Query issues and pull requests
    - [x] **Code Search Server**: Search for specific code patterns or functions
-   - [ ] **Documentation Server**: Extract and process README files and docs
+   - [x] **Documentation Server**: Extract and process README files and docs
 
 2. **MCP Server Specifications**
    - [x] Each server must implement proper MCP protocol
-   - [ ] Include error handling and rate limiting
-   - [ ] Support filtering and pagination where applicable
+   - [ ] Include error handling and rate limiting - Partially.
+   - [ ] Support filtering and pagination where applicable - Partially.
    - [x] Provide clear tool descriptions for the AI agent
 
 ### Part 3: Streamlit Application
@@ -33,31 +52,31 @@ Build an intelligent question-answering system that can understand and query Git
 2. **AI Agent Integration**
    - [x] Use an LLM (OpenAI, Anthropic, or open-source model)
    - [x] Implement tool-calling capabilities
-   - [ ] Design effective prompts for repository understanding
-   - [ ] Handle multi-step reasoning and tool chaining
+   - [x] Design effective prompts for repository understanding
+   - [x] Handle multi-step reasoning and tool chaining
 
 ### Part 4: Advanced Features (Choose 2+)
-- [ ] **Code Analysis**: Analyze code quality, complexity, or patterns
+- [x] **Code Analysis**: Analyze code quality, complexity, or patterns
 - [ ] **Visual Repository Map**: Generate interactive visualizations
-- [ ] **Smart Summarization**: Create repository summaries and overviews
-- [ ] **Change Detection**: Track and explain recent changes
-- [ ] **Dependency Analysis**: Map project dependencies and relationships
-- [ ] **Documentation Generation**: Auto-generate missing documentation
+- [x] **Smart Summarization**: Create repository summaries and overviews
+- [x] **Change Detection**: Track and explain recent changes
+- [ ] **Dependency Analysis**: Map project dependencies and relationships - Partially.
+- [x] **Documentation Generation**: Auto-generate missing documentation
 
 
 ## Deliverables
 1. **Source Code**
-   - [ ] MCP server implementations
-   - [ ] Streamlit application code
-   - [ ] Configuration files and documentation
+   - [x] MCP server implementations
+   - [x] Streamlit application code
+   - [x] Configuration files and documentation
 
 
 ## Sample Questions
-- "What is this repository about and what does it do?"
-- "Show me the main entry points of this application"
-- "What are the recent changes in the last 10 commits?"
-- "Find all functions related to authentication"
-- "What dependencies does this project use?"
-- "Are there any open issues related to performance?"
+- "What is this repository about and what does it do?" - DONE
+- "Show me the main entry points of this application" - DONE
+- "What are the recent changes in the last 10 commits?" - DONE
+- "Find all functions related to authentication" - DONE
+- "What dependencies does this project use?" - DONE
+- "Are there any open issues related to performance?" - DONE
 - "Explain how the database connection is implemented"
-- "What's the testing strategy used in this project?"
+- "What's the testing strategy used in this project?" - DONE

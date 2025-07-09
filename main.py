@@ -62,7 +62,7 @@ async def main():
         )
 
         st.caption(
-            "INFO: If the agent type is changed please refresh the page as some internal variables may persist due to streamlit's defaults."
+            "INFO: Please refresh the page to clear cache before changing the agent type."
         )
 
     # Initialize session state
@@ -105,7 +105,7 @@ async def main():
                         st.session_state.messages = (await agent.ainvoke(state))[
                             "messages"
                         ]
-                        st.write(state)
+                        # st.write(state)
                     elif agent_type == "Planner Agent":
                         response = await agent.ainvoke(
                             AgentState(input=prompt, messages=st.session_state.messages)
