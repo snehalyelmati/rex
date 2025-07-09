@@ -4,6 +4,7 @@ import re
 import subprocess
 from pathlib import Path
 
+import requests
 from git import Repo
 from mcp.server.fastmcp import FastMCP
 
@@ -231,6 +232,97 @@ def get_recent_commits_with_diffs(repo_name: str, num_commits: int = 5):
     except Exception as e:
         print(f"Error: {e}")
         return "Could not fetch commits"
+
+
+@mcp.tool()
+def get_recent_issues_and_prs(owner: str, repo: str, num_items: int = 5):
+    """
+    Retrieves recent Issues and Pull Requests separately from a public GitHub repository using the REST API.
+
+    Args:
+        owner (str): Repository owner username (e.g., 'psf').
+        repo (str): Repository name (e.g., 'requests').
+        num_items (int, optional): Number of recent Issues and PRs to retrieve separately. Defaults to 5.
+
+    Returns (str): A formatted string containing both Issues and PRs, or None on failure.
+    """
+    try:
+        details = []
+
+        # Fetch Issues (non-PRs only)
+        issues_url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+        issues_params = {
+            "state": "all",
+            "per_page": 30,
+            "sort": "created",
+            "direction": "desc",
+        }  # get more in case some are PRs
+        issues_response = requests.get(issues_url, params=issues_params)
+        issues_response.raise_for_status()
+
+        issues_data = issues_response.json()
+        real_issues = [item for item in issues_data if "pull_request" not in item][
+            :num_items
+        ]
+
+        details.append(f"{'='*10} Recent Issues {'='*10}")
+        if real_issues:
+            for issue in real_issues:
+                title = issue.get("title", "No title")
+                number = issue.get("number", "N/A")
+                author = issue.get("user", {}).get("login", "Unknown")
+                state = issue.get("state", "Unknown")
+                created_at = issue.get("created_at", "Unknown")
+                body = (issue.get("body") or "").strip().replace("\n", " ")[:300]
+                url = issue.get("html_url", "")
+
+                details.append(
+                    f"Issue #{number}: {title}\n"
+                    f"Author: {author} | State: {state} | Created: {created_at}\n"
+                    f"URL: {url}\n"
+                    f"Body: {body}\n{'-'*80}"
+                )
+        else:
+            details.append("No recent Issues found.\n" + "-" * 80)
+
+        # Fetch Pull Requests
+        prs_url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
+        prs_params = {
+            "state": "all",
+            "per_page": num_items,
+            "sort": "created",
+            "direction": "desc",
+        }
+        prs_response = requests.get(prs_url, params=prs_params)
+        prs_response.raise_for_status()
+
+        prs_data = prs_response.json()
+
+        details.append(f"{'='*10} Recent Pull Requests {'='*10}")
+        if prs_data:
+            for pr in prs_data:
+                title = pr.get("title", "No title")
+                number = pr.get("number", "N/A")
+                author = pr.get("user", {}).get("login", "Unknown")
+                state = pr.get("state", "Unknown")
+                created_at = pr.get("created_at", "Unknown")
+                body = (pr.get("body") or "").strip().replace("\n", " ")[:300]
+                url = pr.get("html_url", "")
+
+                details.append(
+                    f"PR #{number}: {title}\n"
+                    f"Author: {author} | State: {state} | Created: {created_at}\n"
+                    f"URL: {url}\n"
+                    f"Body: {body}\n{'-'*80}"
+                )
+        else:
+            details.append("No recent Pull Requests found.\n" + "-" * 80)
+
+        return "\n\n".join(details)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return f"Error: {e}"
 
 
 if __name__ == "__main__":
