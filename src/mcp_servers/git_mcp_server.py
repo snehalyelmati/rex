@@ -81,26 +81,6 @@ def get_all_repo_contents(repo_name: str, file_extensions=None):
     return "\n".join(all_contents)
 
 
-# FIXME: To handle files with same name and files with absolute or relative paths.
-def search_and_read_file(folder_path: str, filename: str):
-    """Search for a file in the folder_path and return it's contents if it exists.
-
-    If the `filename` contains parent directory along with the filename, only pass the filename as the parameter.
-
-    Args:
-        folder_path (str): Folder path to search the file in.
-        filename (str): Only the file name without it's parent directory. E.g. `README.md` or `main.py`.
-
-    Returns: Returns the contents of the file if found.
-    """
-    for root, _, files in os.walk(folder_path):
-        if filename in files:
-            file_path = os.path.join(root, filename)
-            with open(file_path, "r") as file:
-                return file.read()
-    return f"File: {filename}, not found in the repo..."
-
-
 @mcp.tool()
 def file_content_parser(repo_name: str, filename: str):
     """Retrieve and fetch contents of the specifiled file.
@@ -115,7 +95,57 @@ def file_content_parser(repo_name: str, filename: str):
     # utility function to check and update repo in ./tmp directory
     check_if_repo_exists(repo_name)
 
-    return search_and_read_file(folder_path="./tmp/" + repo_name, filename=filename)
+    return search_and_read_all_files_safe(
+        repo_root="./tmp/" + repo_name, filename=filename
+    )
+
+
+def search_and_read_all_files_safe(repo_root: str, filename: str) -> str:
+    """
+    Recursively search within the given repository folder for all files matching the filename
+    and return their contents in a labeled, combined string. All file paths are strictly
+    limited to within the repository.
+
+    Args:
+        repo_root (str): The absolute path to the root of the repository.
+        filename (str): The name of the file to search for (e.g., 'README.md', 'main.py').
+
+    Returns:
+        str: Concatenated contents of all matching files, each with its relative path.
+             If no matches are found, returns an informative message.
+    """
+    matches = []
+
+    # Ensure absolute repo path for security
+    repo_root = os.path.abspath(repo_root)
+
+    # Sanitize the filename: only allow basename to prevent path injection
+    safe_filename = os.path.basename(filename)
+
+    for root, _, files in os.walk(repo_root):
+        if safe_filename in files:
+            full_path = os.path.join(root, safe_filename)
+            try:
+                with open(full_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                # Get relative path for clarity
+                rel_path = os.path.relpath(full_path, repo_root)
+                matches.append((rel_path, content))
+            except Exception as e:
+                rel_path = os.path.relpath(full_path, repo_root)
+                matches.append((rel_path, f"Error reading file: {e}"))
+
+    if not matches:
+        return f"No files named '{safe_filename}' found in repository '{repo_root}'."
+
+    # Build formatted output
+    result_parts = []
+    for i, (rel_path, content) in enumerate(matches, 1):
+        result_parts.append(
+            f"{'='*30}\nFile {i}: {rel_path}\n{'='*30}\n{content.strip()}\n"
+        )
+
+    return "\n".join(result_parts)
 
 
 @mcp.tool()
