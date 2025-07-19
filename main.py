@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Union
 
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
@@ -84,7 +85,7 @@ async def main():
             # st.write("Available tools:", [tool for tool in tools][0])
 
             agent = None
-            AgentState = None
+            AgentState: Union(ReactAgentState | PlannerState)
             if agent_type == "ReAct Agent":
                 agent = await build_react_agent(tools_available)
                 AgentState = ReactAgentState

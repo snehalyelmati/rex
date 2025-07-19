@@ -86,7 +86,7 @@ replanner = replanner_prompt | ChatOpenAI(
 
 async def plan_step(state: AgentState):
     plan = await planner.ainvoke(
-        {"messages": state["messages"] + [("user", state["input"])]}
+        {"messages": state["messages"] + [("user", "Task: " + state["input"])]}
     )
     return {
         "plan": plan.steps,
