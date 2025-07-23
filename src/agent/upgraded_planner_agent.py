@@ -1,16 +1,60 @@
-from typing import Annotated, Sequence, TypedDict
+import asyncio
+from typing import Annotated, List, Sequence, TypedDict
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph, add_messages
+from pydantic import BaseModel, Field
 
+from src.utilities.constants import PLANNER_LLM, PLANNER_SYSTEM_PROMPT
 
+# TODO:
 # Step 1: Define the AgentState
+# Step 2: Build the Agent Graph
+#           - Graph Builder
+#           - Add Nodes and Edges to build the required graphs
+#           - Compile the graph
+# Step 3: Implement business logic in each node.
+#           - Planner Node
+
+
+class Plan(BaseModel):
+    """Plan to follow in future"""
+
+    steps: List[str] = Field(
+        description="Sequence of steps to follow to perform the task at hand, should be in sorted order"
+    )
+
+
 class AgentState(TypedDict):
+    task: str
     messages: Annotated[Sequence[BaseMessage], add_messages]
+    plan: Plan
 
 
 # Node Definitions
-def planner_node(state: AgentState):
+async def planner_node(state: AgentState):
+    """
+    This node will trigger the agentic workflow.
+
+    Inputs: System message, Task
+    Output: Initialize plan and persist in-memory.
+
+    """
+    # Append new system message
+    state = {
+        "messages": [
+            SystemMessage(content=PLANNER_SYSTEM_PROMPT),
+            HumanMessage(content=state["task"]),
+        ],
+    }
+
+    # Initialize new plan
+    planner = ChatOpenAI(model=PLANNER_LLM, temperature=0).with_structured_output(Plan)
+    plan = await planner.ainvoke(state["messages"])
+
+    state["plan"] = plan
+
     return state
 
 
@@ -32,13 +76,10 @@ def should_continue():
     pass
 
 
-# Step 2: Build the Agent Graph
 async def build_agent():
 
-    # Step 2.1: Graph Builder
     builder = StateGraph(AgentState)
 
-    # Step 2.1.1: Add Nodes and Edges to build the required graphs
     builder.add_node("planner", planner_node)
     builder.add_node("simple_agent", simple_react_agent)
     builder.add_node("replanner", replanner_node)
@@ -58,5 +99,18 @@ async def build_agent():
     builder.add_edge("replanner", "finalize")
     builder.add_edge("finalize", END)
 
-    # Step 2.1.2: Compile the graph
     return builder.compile()
+
+
+# DEBUG CODE: Use `python -m src.agent.upgraded_planner_agent` to run.
+if __name__ == "__main__":
+    print("Starting debug...")
+    result = asyncio.run(
+        planner_node(
+            AgentState(
+                messages=[], task="To add 5+10 and then multiply the result by itself."
+            )
+        )
+    )
+    print(result)
+    print("Done!")
