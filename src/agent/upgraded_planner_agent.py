@@ -2,7 +2,13 @@ import asyncio
 from textwrap import dedent
 from typing import Annotated, Dict, List, Sequence, TypedDict
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.tools import BaseTool, tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph, add_messages
@@ -12,6 +18,8 @@ from pydantic import BaseModel, Field
 from src.utilities.constants import (
     PLANNER_LLM,
     PLANNER_SYSTEM_PROMPT,
+    REPLANNER_LLM,
+    REPLANNER_PROMPT,
     SIMPLE_ACTION_LLM,
     SIMPLE_ACTION_PROMPT,
 )
@@ -62,8 +70,8 @@ async def planner_node(state: AgentState):
     )
 
     # Initialize new plan
-    planner = ChatOpenAI(model=PLANNER_LLM, temperature=0).with_structured_output(Plan)
-    plan = await planner.ainvoke(state["messages"])
+    llm = ChatOpenAI(model=PLANNER_LLM, temperature=0).with_structured_output(Plan)
+    plan = await llm.ainvoke(state["messages"])
 
     state["plan"] = plan
 
@@ -92,18 +100,65 @@ async def simple_react_agent(state: AgentState):
         {"messages": [("user", task_formatted)]}
     )
 
-    state = {
-        "messages": [agent_response],
-    }
+    state["messages"].extend(
+        [create_message_copy(m) for m in agent_response["messages"]]
+    )
 
     return state
 
 
-def replanner_node(state: AgentState):
+def create_message_copy(message):
+    """Create a deep copy of a message with proper attribute handling."""
+    message_type = type(message)
+
+    # Get all relevant attributes from the original message
+    kwargs = {"content": message.content}
+
+    # Handle special attributes for different message types
+    if isinstance(message, ToolMessage):
+        if hasattr(message, "tool_call_id"):
+            kwargs["tool_call_id"] = message.tool_call_id
+
+    # Preserve other common attributes if they exist
+    for attr in ["id"]:
+        if hasattr(message, attr):
+            kwargs[attr] = getattr(message, attr)
+
+    return message_type(**kwargs)
+
+
+async def replanner_node(state: AgentState):
+    """
+    This node will check the current plan and modify it based on steps done and results returned in the previous steps.
+
+    Returns: AgentState with updated plan.
+    """
+    state["messages"].append(
+        HumanMessage(
+            content=REPLANNER_PROMPT.format(
+                task=state["task"],
+                plan=state["plan"],
+                messages="\n".join(m.pretty_repr() for m in state["messages"]),
+            )
+        )
+    )
+
+    llm = ChatOpenAI(model=REPLANNER_LLM, temperature=0).with_structured_output(Plan)
+
+    plan = await llm.ainvoke(state["messages"])
+
+    state["plan"] = plan
+
     return state
 
 
 def finalize_node(state: AgentState):
+    """
+    This node will take into account of all the tasks done till now and prepare the final answer to return.
+
+    Returns: AgentState with the final result in messages.
+    """
+
     return state
 
 
@@ -148,11 +203,20 @@ if __name__ == "__main__":
         tools=[],
     )
 
-    state = asyncio.run(planner_node(state))
-    print(state)
-    print()
+    plan_state = asyncio.run(planner_node(state))
 
-    result = asyncio.run(simple_react_agent(state))
+    action_state = asyncio.run(simple_react_agent(plan_state))
+    print(f"Action_1 state: {action_state}\n")
 
-    print(result)
+    replanner_state = asyncio.run(replanner_node(action_state))
+    print(f"Replanner_1 state: {replanner_state}\n")
+
+    i = 2
+    while state["plan"] != []:
+        action_state = asyncio.run(simple_react_agent(plan_state))
+        print(f"Action_{i} state: {action_state}\n")
+
+        replanner_state = asyncio.run(replanner_node(action_state))
+        print(f"Replanner_{i} state: {replanner_state}\n")
+
     print("Done!")
