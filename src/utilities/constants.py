@@ -3,6 +3,7 @@ from textwrap import dedent
 PLANNER_LLM = "gpt-4.1"
 SIMPLE_ACTION_LLM = "gpt-4o"
 REPLANNER_LLM = "gpt-4.1"
+FINALIZER_LLM = "gpt-4o"
 
 PLANNER_SYSTEM_PROMPT = dedent(
     """For the given objective, come up with a simple step by step plan.
@@ -30,5 +31,18 @@ Your original plan was this:
 
 Past conversation history:
 {messages}
+"""
+)
+
+FINALIZER_PROMPT = dedent(
+    """Now, for the task, based on the conversation history, finalize the output to return to the user.
+
+Your objective is this:
+{task}
+
+Past conversation history:
+{messages}
+
+Return only the answer, do not add anything that is not necessary.
 """
 )

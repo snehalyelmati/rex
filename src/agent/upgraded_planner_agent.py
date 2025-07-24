@@ -1,4 +1,5 @@
 import asyncio
+import json
 from textwrap import dedent
 from typing import Annotated, Dict, List, Sequence, TypedDict
 
@@ -16,6 +17,8 @@ from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 
 from src.utilities.constants import (
+    FINALIZER_LLM,
+    FINALIZER_PROMPT,
     PLANNER_LLM,
     PLANNER_SYSTEM_PROMPT,
     REPLANNER_LLM,
@@ -33,6 +36,8 @@ from src.utilities.constants import (
 # Step 3: Implement business logic in each node.
 #           - Planner Node
 #           - ReAct agent
+#           - Replanner Node
+#           - Conditional Edge
 
 
 class Plan(BaseModel):
@@ -61,7 +66,6 @@ async def planner_node(state: AgentState):
 
     Returns: The plan of action.
     """
-    # Append new system message
     state["messages"].extend(
         [
             SystemMessage(content=PLANNER_SYSTEM_PROMPT),
@@ -69,10 +73,8 @@ async def planner_node(state: AgentState):
         ]
     )
 
-    # Initialize new plan
     llm = ChatOpenAI(model=PLANNER_LLM, temperature=0).with_structured_output(Plan)
     plan = await llm.ainvoke(state["messages"])
-
     state["plan"] = plan
 
     return state
@@ -88,7 +90,6 @@ async def simple_react_agent(state: AgentState):
     plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
     task = plan[0]
     task_formatted = SIMPLE_ACTION_PROMPT.format(plan_str=plan_str, task=task)
-
     print(f'Tools right now: {state["tools"]}.\n')
 
     llm = ChatOpenAI(model=SIMPLE_ACTION_LLM, temperature=0)
@@ -97,7 +98,7 @@ async def simple_react_agent(state: AgentState):
     )
 
     agent_response = await agent_executor.ainvoke(
-        {"messages": [("user", task_formatted)]}
+        {"messages": [HumanMessage(content=task_formatted)]}
     )
 
     state["messages"].extend(
@@ -120,6 +121,7 @@ def create_message_copy(message):
             kwargs["tool_call_id"] = message.tool_call_id
 
     # Preserve other common attributes if they exist
+    # ["additional_kwargs", "id"]:
     for attr in ["id"]:
         if hasattr(message, attr):
             kwargs[attr] = getattr(message, attr)
@@ -144,28 +146,44 @@ async def replanner_node(state: AgentState):
     )
 
     llm = ChatOpenAI(model=REPLANNER_LLM, temperature=0).with_structured_output(Plan)
-
     plan = await llm.ainvoke(state["messages"])
-
     state["plan"] = plan
 
     return state
 
 
-def finalize_node(state: AgentState):
+async def finalize_node(state: AgentState):
     """
     This node will take into account of all the tasks done till now and prepare the final answer to return.
 
     Returns: AgentState with the final result in messages.
     """
 
+    state["messages"].append(
+        HumanMessage(
+            content=FINALIZER_PROMPT.format(
+                task=state["task"],
+                plan=state["plan"],
+                messages="\n".join(m.pretty_repr() for m in state["messages"]),
+            )
+        )
+    )
+
+    llm = ChatOpenAI(model=FINALIZER_LLM, temperature=0)
+    result = await llm.ainvoke(state["messages"])
+    state["messages"].append(AIMessage(content=result.content))
+
     return state
 
 
 # Utility Functions
-def should_continue():
+def should_continue(state: AgentState):
     """This function decides whether to proceed with forward to work on the task or end processing."""
-    pass
+
+    if replanner_state["plan"].steps:
+        return "CONTINUE"
+    else:
+        return "END"
 
 
 async def build_agent():
@@ -187,7 +205,6 @@ async def build_agent():
             "CONTINUE": "simple_agent",
         },
     )
-    builder.add_edge("replanner", "finalize")
     builder.add_edge("finalize", END)
 
     return builder.compile()
@@ -212,11 +229,14 @@ if __name__ == "__main__":
     print(f"Replanner_1 state: {replanner_state}\n")
 
     i = 2
-    while state["plan"] != []:
+    while replanner_state["plan"].steps:
         action_state = asyncio.run(simple_react_agent(plan_state))
         print(f"Action_{i} state: {action_state}\n")
 
         replanner_state = asyncio.run(replanner_node(action_state))
         print(f"Replanner_{i} state: {replanner_state}\n")
+
+    final_state = asyncio.run(finalize_node(replanner_state))
+    print(f"Final state: {final_state}\n")
 
     print("Done!")
