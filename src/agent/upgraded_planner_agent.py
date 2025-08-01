@@ -90,7 +90,7 @@ async def simple_react_agent(state: AgentState):
     plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
     task = plan[0]
     task_formatted = SIMPLE_ACTION_PROMPT.format(plan_str=plan_str, task=task)
-    print(f'Tools right now: {state["tools"]}.\n')
+    # print(f'Tools right now: {state["tools"]}.\n')
 
     llm = ChatOpenAI(model=SIMPLE_ACTION_LLM, temperature=0)
     agent_executor = create_react_agent(
@@ -109,24 +109,22 @@ async def simple_react_agent(state: AgentState):
 
 
 def create_message_copy(message):
-    """Create a deep copy of a message with proper attribute handling."""
-    message_type = type(message)
-
-    # Get all relevant attributes from the original message
-    kwargs = {"content": message.content}
-
-    # Handle special attributes for different message types
+    """Create a copy of a message maintaining only the required attributes for better context management."""
     if isinstance(message, ToolMessage):
-        if hasattr(message, "tool_call_id"):
-            kwargs["tool_call_id"] = message.tool_call_id
-
-    # Preserve other common attributes if they exist
-    # ["additional_kwargs", "id"]:
-    for attr in ["id"]:
-        if hasattr(message, attr):
-            kwargs[attr] = getattr(message, attr)
-
-    return message_type(**kwargs)
+        return ToolMessage(
+            content=message.content,
+            tool_call_id=message.tool_call_id,  # Important for tool calling
+            id=getattr(message, "id", None),
+        )
+    elif isinstance(message, AIMessage):
+        kwargs = {"content": message.content, "id": getattr(message, "id", None)}
+        # Preserve tool_calls if they exist
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            kwargs["tool_calls"] = message.tool_calls
+        return AIMessage(**kwargs)
+    else:
+        # For HumanMessage, SystemMessage, etc.
+        return type(message)(content=message.content, id=getattr(message, "id", None))
 
 
 async def replanner_node(state: AgentState):
@@ -140,7 +138,6 @@ async def replanner_node(state: AgentState):
             content=REPLANNER_PROMPT.format(
                 task=state["task"],
                 plan=state["plan"],
-                messages="\n".join(m.pretty_repr() for m in state["messages"]),
             )
         )
     )
@@ -164,7 +161,6 @@ async def finalize_node(state: AgentState):
             content=FINALIZER_PROMPT.format(
                 task=state["task"],
                 plan=state["plan"],
-                messages="\n".join(m.pretty_repr() for m in state["messages"]),
             )
         )
     )
@@ -180,7 +176,7 @@ async def finalize_node(state: AgentState):
 def should_continue(state: AgentState):
     """This function decides whether to proceed with forward to work on the task or end processing."""
 
-    if replanner_state["plan"].steps:
+    if state["plan"].steps:
         return "CONTINUE"
     else:
         return "END"

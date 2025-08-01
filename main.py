@@ -13,6 +13,8 @@ from src.agent.planner_agent import AgentState as PlannerState
 from src.agent.planner_agent import build_agent as build_planner_agent
 from src.agent.react_agent import AgentState as ReactAgentState
 from src.agent.react_agent import build_agent as build_react_agent
+from src.agent.upgraded_planner_agent import AgentState as UPEState
+from src.agent.upgraded_planner_agent import build_agent as build_upe_agent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,7 +22,7 @@ logging.basicConfig(
     datefmt="%m/%d/%y %H:%M:%S",
 )
 
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 
 # MCP Server parameters
 server_params = StdioServerParameters(
@@ -59,7 +61,7 @@ async def main():
 
         agent_type = st.selectbox(
             "Which agent would you like to use?",
-            ("ReAct Agent", "Planner Agent"),
+            ("Upgraded Planner Agent", "ReAct Agent", "Planner Agent"),
         )
 
         st.caption(
@@ -85,13 +87,16 @@ async def main():
             # st.write("Available tools:", [tool for tool in tools][0])
 
             agent = None
-            AgentState: Union(ReactAgentState | PlannerState)
+            AgentState: Union(ReactAgentState | PlannerState | UPEState)
             if agent_type == "ReAct Agent":
                 agent = await build_react_agent(tools_available)
                 AgentState = ReactAgentState
             elif agent_type == "Planner Agent":
                 agent = await build_planner_agent(tools_available)
                 AgentState = PlannerState
+            elif agent_type == "Upgraded Planner Agent":
+                agent = await build_upe_agent()
+                AgentState = UPEState
 
             # Implementing Agentic workflow
             if prompt := st.chat_input("How can I help?"):
@@ -114,6 +119,18 @@ async def main():
                         st.write(response)
                         st.session_state.messages.append(
                             AIMessage(response["past_steps"][-1][-1])
+                        )
+                    elif agent_type == "Upgraded Planner Agent":
+                        response = await agent.ainvoke(
+                            AgentState(
+                                task=prompt,
+                                messages=st.session_state.messages,
+                                tools=tools_available,
+                            )
+                        )
+                        st.write(response)
+                        st.session_state.messages.append(
+                            AIMessage(response["messages"][-1].content)
                         )
 
                 # Display tool message along with AIMessage
