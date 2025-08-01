@@ -21,7 +21,7 @@ def check_if_repo_exists(repo_name: str):
     """Check if the specified repo exists in the /tmp folder, else persist it.
 
     Args:
-        repo_name (str): name of the repo with organization, e.g. org/repo
+        repo_name (str): name of the repo with organization, for example, organization_name/repo_name.
 
     Returns: None
     """
@@ -43,10 +43,11 @@ def check_if_repo_exists(repo_name: str):
 @mcp.tool()
 def get_all_repo_contents(repo_name: str, file_extensions=None):
     """
+    Useful to get all the content of every files in the repository.
     Recursively reads all files in the given repo directory and returns their combined contents as a string.
 
     Args:
-        repo_path (str): Path to the cloned repository.
+        repo_name (str): name of the repo with organization, for example, organization_name/repo_name.
         file_extensions (set): Set of file extensions to include (e.g., {'.py', '.md', '.txt'})
 
     Returns:
@@ -86,7 +87,7 @@ def file_content_parser(repo_name: str, filename: str):
     """Retrieve and fetch contents of the specifiled file.
 
     Args:
-        repo_name (str): Name of the repository to search the file in.
+        repo_name (str): name of the repo with organization, for example, organization_name/repo_name.
         filename (str): Name of the file to be fetched.
 
     Returns: File contents of the specified file if found.
@@ -153,7 +154,7 @@ def get_repo_structure(repo_name: str):
     """Get the directory structure of the specified repository.
 
     Args:
-        repo_name (str): Name of the repository.
+        repo_name (str): name of the repo with organization, for example, organization_name/repo_name.
 
     Returns: Directory structure of the repo.
     """
@@ -189,7 +190,7 @@ def code_search(repo_name: str, search_pattern: str) -> str:
     - To find specific function calls: r"my_function\("
 
     Args:
-        repo_name (str): Name of the repository.
+        repo_name (str): name of the repo with organization, for example, organization_name/repo_name.
         search_pattern (str): Pattern to search for in the repository.
 
     Returns: List of all occurences of the specified search pattern from the repository as a string.
@@ -231,7 +232,7 @@ def get_recent_commits_with_diffs(repo_name: str, num_commits: int = 5):
     Retrieves recent commit messages along with their diffs from a local Git repository.
 
     Args:
-        repo_name (str): Name of the git repo.
+        repo_name (str): name of the repo with organization, for example, organization_name/repo_name.
         num_commits (int, optional): Number of recent commits to retrieve. Defaults to 5.
 
     Returns (str): A string containing commit messages and diffs, or None if the repository is invalid.
