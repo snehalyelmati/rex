@@ -87,7 +87,7 @@ async def simple_react_agent(state: AgentState):
     Returns: AgentState with the result in messages.
     """
     plan = state["plan"]
-    plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
+    plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan.steps))
     task = plan[0]
     task_formatted = SIMPLE_ACTION_PROMPT.format(plan_str=plan_str, task=task)
     # print(f'Tools right now: {state["tools"]}.\n')
