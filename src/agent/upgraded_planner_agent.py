@@ -1,7 +1,5 @@
 import asyncio
-import json
-from textwrap import dedent
-from typing import Annotated, Dict, List, Sequence, TypedDict
+from typing import Annotated, List, Sequence, TypedDict
 
 from langchain_core.messages import (
     AIMessage,
@@ -10,7 +8,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.prebuilt import create_react_agent
@@ -25,19 +23,9 @@ from src.utilities.constants import (
     REPLANNER_PROMPT,
     SIMPLE_ACTION_LLM,
     SIMPLE_ACTION_PROMPT,
+    SUMMARIZER_LLM,
+    SUMMARY_PROMPT,
 )
-
-# TODO:
-# Step 1: Define the AgentState
-# Step 2: Build the Agent Graph
-#           - Graph Builder
-#           - Add Nodes and Edges to build the required graphs
-#           - Compile the graph
-# Step 3: Implement business logic in each node.
-#           - Planner Node
-#           - ReAct agent
-#           - Replanner Node
-#           - Conditional Edge
 
 
 class Plan(BaseModel):
@@ -89,9 +77,18 @@ async def simple_react_agent(state: AgentState):
     plan = state["plan"]
     plan_str = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan.steps))
     task = plan[0]
-    task_formatted = SIMPLE_ACTION_PROMPT.format(plan_str=plan_str, task=task)
+
+    # Summarize past conversation history
+    summarizer_llm = ChatOpenAI(model=SUMMARIZER_LLM, temperature=0)
+    summary_prompt = SUMMARY_PROMPT.format(messages=state["messages"])
+    summary = summarizer_llm.invoke(summary_prompt).content
+
+    task_formatted = SIMPLE_ACTION_PROMPT.format(
+        plan_str=plan_str, task=task, conv_history=summary
+    )
     # print(f'Tools right now: {state["tools"]}.\n')
 
+    # Agent LLM call
     llm = ChatOpenAI(model=SIMPLE_ACTION_LLM, temperature=0)
     agent_executor = create_react_agent(
         model=llm, tools=state["tools"], prompt=task_formatted
