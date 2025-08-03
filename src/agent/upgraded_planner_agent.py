@@ -154,12 +154,7 @@ async def finalize_node(state: AgentState):
     """
 
     state["messages"].append(
-        HumanMessage(
-            content=FINALIZER_PROMPT.format(
-                task=state["task"],
-                plan=state["plan"],
-            )
-        )
+        HumanMessage(content=FINALIZER_PROMPT.format(task=state["task"]))
     )
 
     llm = ChatOpenAI(model=FINALIZER_LLM, temperature=0)
