@@ -9,12 +9,10 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from PIL.Image import Image
 
-from src.agent.planner_agent import AgentState as PlannerState
+from src.agent.planner_agent import AgentState as PlannerAgentState
 from src.agent.planner_agent import build_agent as build_planner_agent
 from src.agent.react_agent import AgentState as ReactAgentState
 from src.agent.react_agent import build_agent as build_react_agent
-from src.agent.upgraded_planner_agent import AgentState as UPEState
-from src.agent.upgraded_planner_agent import build_agent as build_upe_agent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +20,7 @@ logging.basicConfig(
     datefmt="%m/%d/%y %H:%M:%S",
 )
 
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 
 # MCP Server parameters
 server_params = StdioServerParameters(
@@ -55,13 +53,12 @@ async def main():
         )
         st.write(
             """
-            1. __ReAct Agent__ is useful for simpler tasks, more stable.
-            2. __Planner Agent__ is suitable for more complex tasks.""",
+            1. __ReAct Agent__ is useful for simpler tasks, cheaper and faster.
+            2. __Planner Agent__ is suitable for more complex tasks requiring detailed analysis.""",
         )
 
         agent_type = st.selectbox(
-            "Which agent would you like to use?",
-            ("Upgraded Planner Agent", "ReAct Agent", "Planner Agent"),
+            "Which agent would you like to use?", ("ReAct Agent", "Planner Agent")
         )
 
         st.caption(
@@ -87,16 +84,13 @@ async def main():
             # st.write("Available tools:", [tool for tool in tools][0])
 
             agent = None
-            AgentState: Union(ReactAgentState | PlannerState | UPEState)
+            AgentState: Union(ReactAgentState | PlannerAgentState)
             if agent_type == "ReAct Agent":
                 agent = await build_react_agent(tools_available)
                 AgentState = ReactAgentState
             elif agent_type == "Planner Agent":
-                agent = await build_planner_agent(tools_available)
-                AgentState = PlannerState
-            elif agent_type == "Upgraded Planner Agent":
-                agent = await build_upe_agent()
-                AgentState = UPEState
+                agent = await build_planner_agent()
+                AgentState = PlannerAgentState
 
             # Implementing Agentic workflow
             if prompt := st.chat_input("How can I help?"):
@@ -113,14 +107,6 @@ async def main():
                         ]
                         # st.write(state)
                     elif agent_type == "Planner Agent":
-                        response = await agent.ainvoke(
-                            AgentState(input=prompt, messages=st.session_state.messages)
-                        )
-                        st.write(response)
-                        st.session_state.messages.append(
-                            AIMessage(response["past_steps"][-1][-1])
-                        )
-                    elif agent_type == "Upgraded Planner Agent":
                         response = await agent.ainvoke(
                             AgentState(
                                 task=prompt,
