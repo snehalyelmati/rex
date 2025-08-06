@@ -46,7 +46,7 @@ def display_chat_history():
 async def main():
     agent_type = None
     with st.sidebar:
-        st.header("REPO EXPLORER")
+        st.header("REX")
         # st.image(agent.get_graph().draw_mermaid_png())
         st.write(
             "Intelligent question-answering system that can understand and query GitHub repositories using Model Context Protocol (MCP) servers and a Streamlit interface."

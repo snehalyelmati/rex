@@ -1,12 +1,12 @@
-# Rex - Repo-Explorer 🎛️
+# Rex 🎛️
 
 **A modular, general-purpose agent built with LangGraph, MCP, and LangSmith — demonstrated via GitHub code analysis.**
 
 ## 🚀 What It Does
 
-Repo-Explorer is a **Plan‑and‑Execute agent** architecture built from scratch using **LangGraph**, instrumented via **MCP servers**, with **LangSmith tracing**, and a Streamlit-based UI.
+Rex is a **Plan‑and‑Execute agent** architecture built from scratch using **LangGraph**, instrumented via **MCP servers**, with **LangSmith tracing**, and a Streamlit-based UI.
 
-Key capabilities:
+### Key capabilities:
 - Multi-step reasoning via custom **planner** → **executor** → **replanner** → **finalizer** pipeline (see [`rex_flow.png`](images/rex_flow.png)).
 - Tool-agnostic design: supports GitHub code exploration today, but can be applied to any domain by swapping MCP endpoints.
 - Context-aware: uses context summarization and selective message passing to reduce token usage.
@@ -14,10 +14,6 @@ Key capabilities:
 - Benchmark-ready: metrics captured for latency and token consumption.
 
 ## 🧩 Architecture Overview
-
-Repo-Explorer uses a sophisticated multi-agent architecture with the following components:
-
-### Core Architecture Flow
 
 ```mermaid
 flowchart TD
@@ -90,7 +86,7 @@ flowchart TD
 1. **Clone and navigate to the repository:**
    ```sh
    git clone <repository-url>
-   cd repo-explorer
+   cd rex
    ```
 
 2. **Set up environment variables:**
