@@ -1,6 +1,6 @@
-# Rex 🎛️
+# Rex - Repo Explorer 🎛️
 
-**A modular, general-purpose agent built with LangGraph, MCP, and LangSmith — demonstrated via GitHub code analysis.**
+**A modular, general-purpose agent built with LangGraph, MCP, and LangSmith - demonstrated via GitHub code analysis.**
 
 ## 🚀 What It Does
 
