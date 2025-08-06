@@ -1,82 +1,106 @@
-# Agentic Repo Explorer
+# Rex - Repo-Explorer 🎛️
 
-Intelligent question-answering system that can understand and query GitHub repositories using Model Context Protocol (MCP) servers and a Streamlit interface with ReAct and Planner agent implemented with Langgraph.
+**A modular, general-purpose agent built with LangGraph, MCP, and LangSmith — demonstrated via GitHub code analysis.**
 
-## Installation instructions
-To run the app locally, first install `uv` from the [Official Website](https://docs.astral.sh/uv/getting-started/installation/)
+---
 
-### To install and run the virtual environment
-```
-$ uv venv
+## 🚀 What It Does
 
-$ source .venv/bin/activate
-```
+Repo-Explorer is a **Plan‑and‑Execute agent** architecture built from scratch using **LangGraph**, instrumented via **MCP servers**, with **LangSmith tracing**, and a Streamlit-based UI.
 
-### To install all the dependencies from pyproject.toml
-```
-$ uv pip install 
-```
+Key capabilities:
+- Multi-step reasoning via custom **planner** → **executor** → **replanner** → **finalizer** pipeline (see [`rex_flow.png`](./rex_flow.png)).
+- Tool-agnostic design: supports GitHub code exploration today, but can be applied to any domain by swapping MCP endpoints.
+- Context-aware: uses context summarization and selective message passing to reduce token usage.
+- Observability-ready: full tracing enabled via **LangSmith** (`LANGCHAIN_TRACING_V2=true`).
+- Benchmark-ready: metrics captured for latency and token consumption.
 
-### To run the Streamlit app
-```
-$ streamlit run main.py
-```
+---
 
-## Progress:
+## 🧩 Architecture Overview
 
-### Part 1: GitHub Repository Selection & Analysis
-   - I've selected `psf/requests` repo since it is one of the most used packages and relatively large.
+- **Planner Node**: generates step-by-step plan from user input.
+- **Executor Node** (React agent): calls MCP-based tools to complete each step.
+- **Replanner**: adapts plan based on what’s already known or executed.
+- **Finalizer**: summarizes results and optionally compresses context for next turn.
 
-### Part 2: MCP Server Development
-1. **Create MCP Servers** (Choose at least 3 of the following)
-   - [x] **File Content Server**: Retrieve and read file contents
-   - [x] **Repository Structure Server**: Get directory trees and file listings
-   - [x] **Commit History Server**: Access commit messages and changes
-   - [x] **Issue/PR Server**: Query issues and pull requests
-   - [x] **Code Search Server**: Search for specific code patterns or functions
-   - [x] **Documentation Server**: Extract and process README files and docs
+Each node updates the `AgentState`. The architecture is fully described in [`rex_flow.png`](./rex_flow.png) and the high-level system in [`images/Overview.png`](images/Overview.png):
 
-2. **MCP Server Specifications**
-   - [x] Each server must implement proper MCP protocol
-   - [ ] Include error handling and rate limiting - Partially.
-   - [ ] Support filtering and pagination where applicable - Partially.
-   - [x] Provide clear tool descriptions for the AI agent
+![System Architecture](images/Overview.png)
 
-### Part 3: Streamlit Application
-1. **Build Q&A Interface**
-   - [x] Clean, intuitive chat-like interface
-   - [x] Display conversation history
-   - [x] Show which MCP tools were used for each response
-   - [ ] Include repository information and stats
+---
 
-2. **AI Agent Integration**
-   - [x] Use an LLM (OpenAI, Anthropic, or open-source model)
-   - [x] Implement tool-calling capabilities
-   - [x] Design effective prompts for repository understanding
-   - [x] Handle multi-step reasoning and tool chaining
+## Features
 
-### Part 4: Advanced Features (Choose 2+)
-- [x] **Code Analysis**: Analyze code quality, complexity, or patterns
-- [ ] **Visual Repository Map**: Generate interactive visualizations
-- [x] **Smart Summarization**: Create repository summaries and overviews
-- [x] **Change Detection**: Track and explain recent changes
-- [ ] **Dependency Analysis**: Map project dependencies and relationships - Partially.
-- [x] **Documentation Generation**: Auto-generate missing documentation
+- **Conversational Q&A**: Chat with the system to ask questions about any GitHub repository.
+- **Multiple Agent Types**: Choose between ReAct, Planner, and Upgraded Planner agents for simple or complex tasks.
+- **MCP Tool Integration**: Access repository structure, file contents, commit history, issues/PRs, code search, documentation, and more via MCP servers.
+- **Advanced Code Analysis**: Summarize, analyze, and explain code, dependencies, and recent changes.
+- **Streamlit UI**: Clean, chat-like interface with conversation history and tool usage display.
+- **Extensible**: Easily add new MCP tools or agent types.
+- **LangSmith Tracing**: Full observability and debugging with LangSmith.
+- **Metrics**: Latency and token usage tracking for benchmarking.
 
+---
 
-## Deliverables
-1. **Source Code**
-   - [x] MCP server implementations
-   - [x] Streamlit application code
-   - [x] Configuration files and documentation
+## Installation & Setup
 
+1. **Install [uv](https://docs.astral.sh/uv/getting-started/installation/)** (for fast Python dependency management):
+   ```sh
+   uv venv
+   source .venv/bin/activate
+   uv pip install
+   ```
+2. **Install Streamlit and other dependencies** (if not using uv):
+   ```sh
+   pip install -r requirements.txt  # or see pyproject.toml for dependencies
+   ```
+3. **Run the Streamlit app:**
+   ```sh
+   streamlit run main.py
+   ```
 
-## Sample Questions
-- "What is this repository about and what does it do?" - DONE
-- "Show me the main entry points of this application" - DONE
-- "What are the recent changes in the last 10 commits?" - DONE
-- "Find all functions related to authentication" - DONE
-- "What dependencies does this project use?" - DONE
-- "Are there any open issues related to performance?" - DONE
-- "Explain how the database connection is implemented"
-- "What's the testing strategy used in this project?" - DONE
+---
+
+## Usage
+
+- Launch the app and select your preferred agent in the sidebar.
+- Enter your question or task in the chat input (e.g., "Show me all functions related to authentication").
+- The agent will analyze the repository, call MCP tools as needed, and respond in the chat.
+- Tool usage and conversation history are displayed for transparency.
+
+---
+
+## Supported MCP Tools
+
+- **File Content Server**: Retrieve and read file contents
+- **Repository Structure Server**: Get directory trees and file listings
+- **Commit History Server**: Access commit messages and changes
+- **Issue/PR Server**: Query issues and pull requests
+- **Code Search Server**: Search for specific code patterns or functions
+- **Documentation Server**: Extract and process README files and docs
+
+---
+
+## Example Questions
+
+- What is this repository about and what does it do?
+- Show me the main entry points of this application
+- What are the recent changes in the last 10 commits?
+- Find all functions related to authentication
+- What dependencies does this project use?
+- Are there any open issues related to performance?
+- Explain how the database connection is implemented
+- What's the testing strategy used in this project?
+
+---
+
+## Contributing
+
+Contributions are welcome! Please open issues or pull requests for bug fixes, new features, or improvements.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
